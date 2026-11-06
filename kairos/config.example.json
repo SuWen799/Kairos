@@ -1,0 +1,8 @@
+{
+  "llm": {
+    "base_url": "https://api.deepseek.com/v1",
+    "api_key": "sk-xxxxxxxxxxxxxxxxxxxxxxxx",
+    "model": "deepseek-chat"
+  },
+  "server": { "host": "127.0.0.1", "port": 8626 }
+}

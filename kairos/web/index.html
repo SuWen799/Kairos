@@ -1,0 +1,950 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kairos · 自进化个人智能体</title>
+<style>
+:root{
+  --bg0:#07090f; --bg1:#0d1017; --bg2:#121624; --bg3:#181d2e;
+  --line:#1d2333; --line2:#283049;
+  --tx:#e8ecf6; --tx2:#8b93a7; --tx3:#5a6378;
+  --acc:#6d7cff; --acc2:#a06bff; --ok:#3ddc97; --warn:#ffb454; --err:#ff6b81;
+  --grad:linear-gradient(135deg,#6d7cff,#a06bff);
+  --mono:ui-monospace,SFMono-Regular,Consolas,"Courier New",monospace;
+  --r:14px;
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;font-family:"PingFang SC","Microsoft YaHei",-apple-system,"Segoe UI",sans-serif;
+  background:var(--bg0);color:var(--tx);overflow:hidden}
+::selection{background:rgba(109,124,255,.35)}
+::-webkit-scrollbar{width:8px;height:8px}
+::-webkit-scrollbar-thumb{background:var(--line2);border-radius:8px}
+::-webkit-scrollbar-thumb:hover{background:#39456b}
+::-webkit-scrollbar-track{background:transparent}
+
+/* ===== 左侧导航 rail（抄 lobe-chat 布局语言）===== */
+#rail{position:fixed;left:0;top:0;bottom:0;width:64px;background:var(--bg1);
+  border-right:1px solid var(--line);display:flex;flex-direction:column;align-items:center;
+  padding:14px 0;z-index:20}
+#rail .logo{width:36px;height:36px;border-radius:11px;background:var(--grad);color:#fff;
+  display:flex;align-items:center;justify-content:center;
+  cursor:pointer;box-shadow:0 4px 18px rgba(109,124,255,.35);margin-bottom:20px}
+#rail .logo svg{width:20px;height:20px;stroke-width:2}
+.ic{width:1.08em;height:1.08em;vertical-align:-0.18em;flex-shrink:0}
+.nav .ic{width:19px;height:19px;margin-bottom:1px}
+.vhead .ic{width:19px;height:19px;color:var(--acc)}
+.nav{width:44px;height:44px;border-radius:12px;display:flex;flex-direction:column;gap:2px;
+  align-items:center;justify-content:center;cursor:pointer;color:var(--tx3);
+  font-size:17px;margin-bottom:6px;transition:.15s;position:relative}
+.nav span{font-size:9px;transform:scale(.9)}
+.nav:hover{background:var(--bg2);color:var(--tx)}
+.nav.on{background:var(--bg3);color:var(--tx)}
+.nav.on::before{content:'';position:absolute;left:-10px;top:12px;bottom:12px;width:3px;
+  border-radius:3px;background:var(--grad)}
+.nav .ndot{position:absolute;top:5px;right:5px;min-width:14px;height:14px;border-radius:7px;
+  background:var(--err);color:#fff;font-size:9px;display:flex;align-items:center;justify-content:center;padding:0 3px}
+#rail .foot{margin-top:auto;font-size:9px;color:var(--tx3);text-align:center;line-height:1.5;cursor:pointer}
+#rail .foot:hover{color:var(--tx2)}
+
+/* ===== 主区 ===== */
+#main{margin-left:64px;height:100vh;display:flex;flex-direction:column}
+.view{flex:1;min-height:0;display:none;flex-direction:column}
+.view.on{display:flex}
+.vhead{display:flex;align-items:center;gap:12px;padding:16px 26px;border-bottom:1px solid var(--line)}
+.vhead h2{font-size:17px;margin:0}
+.vhead .vsub{font-size:12px;color:var(--tx3)}
+.vhead .sp{flex:1}
+.scroll{flex:1;overflow-y:auto;padding:22px 26px}
+.wrap{max-width:1000px;margin:0 auto}
+
+/* ===== 通用卡片/表格/徽章 ===== */
+.card{background:var(--bg2);border:1px solid var(--line);border-radius:14px;
+  padding:14px 16px;margin-bottom:10px;transition:.15s}
+.card:hover{border-color:var(--line2)}
+.card .ct{font-size:13.5px;font-weight:600;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.card .cd{font-size:12.5px;color:var(--tx2);line-height:1.65;margin-top:5px;word-break:break-all}
+.card .cm{font-size:11px;color:var(--tx3);margin-top:7px;font-family:var(--mono);display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.badge2{font-size:10.5px;padding:2px 9px;border-radius:6px;font-weight:600;flex-shrink:0}
+.badge2.ok{background:rgba(61,220,151,.12);color:var(--ok)}
+.badge2.warn{background:rgba(255,180,84,.12);color:var(--warn)}
+.badge2.err{background:rgba(255,107,129,.12);color:var(--err)}
+.badge2.acc{background:rgba(109,124,255,.12);color:var(--acc)}
+.btn{border:0;cursor:pointer;font-size:13px;font-weight:600;color:#fff;border-radius:10px;
+  padding:9px 16px;background:var(--grad);transition:.18s;display:inline-flex;align-items:center;gap:6px}
+.btn:hover{filter:brightness(1.12);transform:translateY(-1px)}
+.btn.ghost{background:var(--bg2);border:1px solid var(--line2);color:var(--tx);font-weight:500}
+.btn.ghost:hover{border-color:var(--acc)}
+.btn.sm{padding:5px 12px;font-size:12px;border-radius:8px}
+.btn.danger{background:rgba(255,107,129,.12);color:var(--err);border:1px solid rgba(255,107,129,.3)}
+.btn:disabled{opacity:.5;cursor:not-allowed;transform:none}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{color:var(--tx3);font-weight:500;text-align:left;padding:8px 10px;border-bottom:1px solid var(--line);font-size:11.5px;white-space:nowrap}
+td{padding:10px;border-bottom:1px solid var(--line);vertical-align:middle}
+tr:last-child td{border-bottom:0}
+tbody tr{transition:.12s}tbody tr:hover{background:rgba(109,124,255,.04)}
+select,input,textarea{background:var(--bg1);border:1px solid var(--line2);border-radius:9px;
+  padding:8px 11px;color:var(--tx);font-size:13px;outline:0;font-family:inherit}
+select:focus,input:focus,textarea:focus{border-color:var(--acc)}
+.statrow{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:18px}
+.stat{background:var(--bg2);border:1px solid var(--line);border-radius:14px;padding:16px;cursor:default;transition:.15s}
+.stat:hover{border-color:var(--line2)}
+.stat b{display:block;font-size:26px;font-variant-numeric:tabular-nums;margin-top:4px}
+.stat span{font-size:11.5px;color:var(--tx3)}
+.stat:nth-child(1) b{color:var(--acc)}.stat:nth-child(2) b{color:var(--ok)}
+.stat:nth-child(3) b{color:var(--warn)}.stat:nth-child(4) b{color:var(--acc2)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start}
+@media(max-width:900px){.grid2{grid-template-columns:1fr}.statrow{grid-template-columns:repeat(2,1fr)}}
+.sechead{display:flex;align-items:center;justify-content:space-between;margin:4px 2px 12px}
+.sechead h3{font-size:14px;margin:0}
+.sechead .hint2{font-size:11.5px;color:var(--tx3)}
+.addrow{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap}
+.addrow input{flex:1;min-width:130px}
+.empty{text-align:center;color:var(--tx3);font-size:13px;padding:40px 16px;line-height:2}
+.empty .ico{font-size:30px;opacity:.5;display:block;margin-bottom:6px}
+.muted{color:var(--tx3);font-size:11.5px}
+a{color:var(--acc);text-decoration:none}
+
+/* ===== 对话视图 ===== */
+#v-chat.on{flex-direction:row!important}
+#sessbar{display:flex;gap:8px;align-items:center;padding:10px 24px 0}
+#sessbar select{max-width:280px;font-size:12.5px}
+#chatmain{flex:1;display:flex;flex-direction:column;min-width:0}
+#log{flex:1;overflow-y:auto;padding:26px 24px 10px}
+#log .inner{max-width:860px;margin:0 auto}
+.hero{text-align:center;padding:6vh 20px 3vh;animation:fadeUp .5s ease}
+.hero .hlogo{width:60px;height:60px;border-radius:17px;background:var(--grad);color:#fff;
+  display:flex;align-items:center;justify-content:center;font-weight:800;font-size:26px;margin:0 auto 16px;
+  box-shadow:0 4px 24px rgba(109,124,255,.35)}
+.hero h2{font-size:24px;margin:0 0 8px}
+.hero h2 span{background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
+.hero p{color:var(--tx2);font-size:13.5px;margin:0 auto 24px;max-width:520px;line-height:1.8}
+.quick{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;max-width:620px;margin:0 auto}
+.qk{font-size:13px;color:var(--tx2);background:var(--bg2);border:1px solid var(--line);
+  padding:9px 15px;border-radius:12px;cursor:pointer;transition:.18s}
+.qk:hover{color:var(--tx);border-color:var(--acc);background:var(--bg3);transform:translateY(-2px)}
+.msg{margin:14px 0;display:flex;gap:10px;animation:fadeUp .3s ease}
+@keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+.msg .avatar{width:30px;height:30px;border-radius:9px;flex-shrink:0;display:flex;
+  align-items:center;justify-content:center;font-size:13px;font-weight:700}
+.msg.user{flex-direction:row-reverse}
+.msg.user .avatar{background:var(--bg3);color:var(--tx2)}
+.msg.bot .avatar{background:var(--grad);color:#fff}
+.bubble{max-width:76%;padding:12px 16px;border-radius:var(--r);font-size:14px;line-height:1.75;
+  white-space:pre-wrap;word-break:break-word}
+.msg.user .bubble{background:var(--grad);color:#fff;border-bottom-right-radius:4px}
+.msg.bot .bubble{background:var(--bg2);border:1px solid var(--line);border-bottom-left-radius:4px}
+.msg.bot .bubble b{color:#b9c4ff}
+.msg.bot .bubble code{font-family:var(--mono);font-size:12.5px;background:var(--bg0);
+  border:1px solid var(--line);padding:1px 6px;border-radius:6px;color:#8be9a8}
+.trace{display:flex;flex-wrap:wrap;align-items:center;gap:5px;margin-top:9px}
+.tchip{font-family:var(--mono);font-size:11px;color:var(--acc2);background:rgba(160,107,255,.1);
+  border:1px solid rgba(160,107,255,.25);padding:2px 8px;border-radius:6px}
+.tarr{color:var(--tx3);font-size:10px}
+.typing{display:flex;gap:4px;padding:14px 18px}
+.typing i{width:6px;height:6px;border-radius:50%;background:var(--tx3);animation:tp 1.2s infinite}
+.typing i:nth-child(2){animation-delay:.15s}.typing i:nth-child(3){animation-delay:.3s}
+@keyframes tp{30%{transform:translateY(-5px);background:var(--acc)}}
+#bar{padding:12px 24px 16px}
+#bar .inner{max-width:860px;margin:0 auto}
+.composer{display:flex;gap:10px;align-items:flex-end;background:var(--bg2);
+  border:1px solid var(--line2);border-radius:16px;padding:10px 12px;transition:.2s}
+.composer:focus-within{border-color:var(--acc);box-shadow:0 0 0 3px rgba(109,124,255,.15)}
+#inp{flex:1;background:transparent;border:0;outline:0;resize:none;color:var(--tx);
+  font-size:14px;font-family:inherit;line-height:1.6;max-height:140px;padding:6px 4px}
+#inp::placeholder{color:var(--tx3)}
+.hint{font-size:11px;color:var(--tx3);text-align:center;margin-top:8px}
+.hint kbd{font-family:var(--mono);background:var(--bg2);border:1px solid var(--line2);
+  border-radius:4px;padding:0 5px;font-size:10px}
+#ctx{width:340px;border-left:1px solid var(--line);background:var(--bg1);display:flex;flex-direction:column}
+@media(max-width:1200px){#ctx{display:none}}
+.ptabs{display:flex;gap:2px;padding:10px 10px 0}
+.ptab{font-size:12px;color:var(--tx2);padding:7px 12px;border-radius:9px 9px 0 0;cursor:pointer;
+  border:1px solid transparent;border-bottom:0;white-space:nowrap}
+.ptab.on{color:var(--tx);background:var(--bg2);border-color:var(--line)}
+.pbody{flex:1;overflow-y:auto;padding:14px;background:var(--bg2);border-top:1px solid var(--line);
+  margin:0 10px 10px;border-radius:0 10px 10px 10px}
+
+/* ===== 弹窗/Toast ===== */
+#mask{position:fixed;inset:0;background:rgba(4,6,12,.7);backdrop-filter:blur(6px);
+  display:none;align-items:center;justify-content:center;z-index:50}
+#mask.show{display:flex}
+.modal{width:min(600px,92vw);max-height:84vh;overflow-y:auto;background:var(--bg1);
+  border:1px solid var(--line2);border-radius:18px;padding:24px;animation:fadeUp .25s ease}
+.modal h3{margin:0 0 6px;font-size:17px}
+.modal .sub2{font-size:12.5px;color:var(--tx2);margin-bottom:16px;line-height:1.7}
+.mfoot{display:flex;justify-content:flex-end;gap:10px;margin-top:18px}
+#toasts{position:fixed;top:18px;right:20px;z-index:99;display:flex;flex-direction:column;gap:8px}
+.toast{background:var(--bg3);border:1px solid var(--line2);border-left:3px solid var(--ok);
+  color:var(--tx);font-size:13px;padding:11px 16px;border-radius:10px;max-width:360px;
+  box-shadow:0 8px 30px rgba(0,0,0,.5);animation:fadeUp .25s ease}
+.toast.err{border-left-color:var(--err)}
+.spin{width:14px;height:14px;border:2px solid rgba(255,255,255,.25);border-top-color:#fff;
+  border-radius:50%;animation:sp .7s linear infinite;display:inline-block}
+@keyframes sp{to{transform:rotate(360deg)}}
+.rsel{display:flex;gap:8px}
+.rsel .ropt{flex:1;text-align:center;padding:9px 0;border-radius:10px;border:1px solid var(--line2);
+  cursor:pointer;font-size:13px;color:var(--tx2)}
+.rsel .ropt.on{border-color:var(--acc);color:var(--tx);background:rgba(109,124,255,.1)}
+.roundcard{border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin-bottom:10px;background:var(--bg2)}
+.roundcard .rh{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600}
+.roundcard .rt{font-size:12px;color:var(--tx2);margin-top:5px;line-height:1.65}
+pre.fileview{background:var(--bg0);border:1px solid var(--line);border-radius:12px;padding:16px;
+  font-family:var(--mono);font-size:12px;line-height:1.8;white-space:pre-wrap;word-break:break-word;
+  max-height:60vh;overflow-y:auto;color:#c8d3f0}
+kbd.k{font-family:var(--mono);background:var(--bg2);border:1px solid var(--line2);border-radius:5px;padding:1px 7px;font-size:11px}
+</style>
+</head>
+<body>
+
+<!-- 左侧导航 -->
+<div id="rail">
+  <div class="logo" onclick="go('chat')" title="Kairos">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M19.5 12a7.5 7.5 0 1 1-2.2-5.3"/><path d="M19.5 3.5v3.8h-3.8"/>
+      <circle cx="12" cy="12" r="2.2" fill="currentColor" stroke="none"/>
+    </svg>
+  </div>
+  <div class="nav" data-v="chat" onclick="go('chat')" title="对话">💬<span>对话</span></div>
+  <div class="nav" data-v="dash" onclick="go('dash')" title="控制台">📊<span>控制台</span></div>
+  <div class="nav" data-v="watch" onclick="go('watch')" title="盯校招巡检">👁<span>巡检</span></div>
+  <div class="nav" data-v="apps" onclick="go('apps')" title="投递台账">📋<span>台账</span></div>
+  <div class="nav" data-v="lab" onclick="go('lab')" title="进化实验室">🧬<span>实验室</span></div>
+  <div class="nav" data-v="team" onclick="go('team')" title="多 Agent 团队">🤖<span>团队</span></div>
+  <div class="nav" data-v="mcp" onclick="go('mcp')" title="MCP 外接工具">🔌<span>MCP</span></div>
+  <div class="nav" data-v="kb" onclick="go('kb')" title="知识库">📚<span>知识</span></div>
+  <div class="nav" data-v="set" onclick="go('set')" title="设置与关于">⚙️<span>设置</span></div>
+  <div class="foot" onclick="openRsi()">⚡RSI<br>循环</div>
+</div>
+
+<div id="main">
+
+  <!-- ===== 界面一：对话 ===== -->
+  <div class="view" id="v-chat">
+    <div id="chatmain">
+      <div id="sessbar">
+        <select id="sessSel" onchange="switchSession(this.value)" title="切换会话"></select>
+        <button class="btn ghost sm" onclick="newSession()" title="新建会话">＋ 新对话</button>
+        <button class="btn danger sm" onclick="delSession()" title="删除当前会话">🗑</button>
+        <span class="muted" style="margin-left:auto">会话相互隔离，记忆与技能全局共享</span>
+      </div>
+      <div id="log"><div class="inner" id="logInner"></div></div>
+      <div id="bar"><div class="inner">
+        <div class="composer">
+          <textarea id="inp" rows="1" placeholder="交代目标即可：如「总结这个校招页 https://… ，按公司/岗位/截止时间整理」"
+            onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();send()}"
+            oninput="this.style.height='auto';this.style.height=Math.min(this.scrollHeight,140)+'px'"></textarea>
+          <button class="btn" id="sendBtn" onclick="send()">发送</button>
+        </div>
+        <div class="hint"><kbd class="k">Enter</kbd> 发送 · <kbd class="k">Shift+Enter</kbd> 换行 · 高危动作先进 HITL 确认队列</div>
+      </div></div>
+    </div>
+    <div id="ctx">
+      <div class="ptabs">
+        <div class="ptab on" data-t="mem" onclick="ctab('mem')">🧠 记忆</div>
+        <div class="ptab" data-t="skl" onclick="ctab('skl')">⚡ 技能</div>
+        <div class="ptab" data-t="conf" onclick="ctab('conf')">🛡 确认</div>
+      </div>
+      <div class="pbody" id="cpbody"></div>
+    </div>
+  </div>
+
+  <!-- ===== 界面二：控制台 ===== -->
+  <div class="view" id="v-dash">
+    <div class="vhead"><h2>📊 控制台</h2><span class="vsub">秋招作战总览 · 数据实时来自 SQLite</span><div class="sp"></div>
+      <button class="btn ghost sm" onclick="loadAll(true)">🔄 刷新</button></div>
+    <div class="scroll"><div class="wrap">
+      <div class="statrow">
+        <div class="stat" onclick="go('apps')" style="cursor:pointer"><span>投递总数</span><b id="dApp">0</b></div>
+        <div class="stat" onclick="go('watch')" style="cursor:pointer"><span>监控中的校招源</span><b id="dSrc">0</b></div>
+        <div class="stat" onclick="go('chat')" style="cursor:pointer"><span>长期记忆条数</span><b id="dMem">0</b></div>
+        <div class="stat" onclick="go('lab')" style="cursor:pointer"><span>已固化技能</span><b id="dSkl">0</b></div>
+      </div>
+      <div class="grid2">
+        <div>
+          <div class="sechead"><h3>🛡 待我批准（HITL）</h3><span class="hint2">Agent 提议的高危动作</span></div>
+          <div id="dConf"></div>
+        </div>
+        <div>
+          <div class="sechead"><h3>📁 最新简报（工作区）</h3><span class="hint2">巡检自动产出</span></div>
+          <div id="dWs"></div>
+        </div>
+      </div>
+      <div class="sechead" style="margin-top:18px"><h3>🎯 Agent 计划（todos）</h3><span class="hint2">Agent 多步任务自己拆的步骤，做完自动勾掉</span></div>
+      <div id="dTodo" style="max-width:640px"></div>
+      <div class="sechead" style="margin-top:18px"><h3>🎯 长期目标（后台自动推进）</h3><span class="hint2">Muse goals 模式 · 调度器每轮派子代理推进一小步</span></div>
+      <div style="max-width:640px">
+        <form class="addrow" onsubmit="return goalAdd(event)">
+          <input id="gTitle" placeholder="目标，如：每天盯腾讯校招页直到出 2027 届公告" required style="flex:2">
+          <input id="gPlan" placeholder="计划（可选）" style="flex:1.4">
+          <button class="btn">🎯 登记</button>
+        </form>
+        <div id="dGoals"></div>
+      </div>
+      <div class="sechead" style="margin-top:18px"><h3>⚡ 快捷动作</h3></div>
+      <div class="quick" style="justify-content:flex-start;max-width:none">
+        <div class="qk" onclick="go('watch');setTimeout(()=>{$('wName').focus()},100)">➕ 添加监控源</div>
+        <div class="qk" onclick="go('apps');setTimeout(()=>{$('aCo').focus()},100)">📝 记一笔投递</div>
+        <div class="qk" onclick="watchRun()">▶ 立即巡检一轮</div>
+        <div class="qk" onclick="openRsi()">🧬 跑一次 RSI 进化</div>
+      </div>
+    </div></div>
+  </div>
+
+  <!-- ===== 界面三：巡检 ===== -->
+  <div class="view" id="v-watch">
+    <div class="vhead"><h2>👁 盯校招 · 内容巡检</h2><span class="vsub">sha256 内容 diff，抓到变化才触发简报</span><div class="sp"></div>
+      <button class="btn sm" id="wrBtn" onclick="watchRun()">▶ 立即巡检</button></div>
+    <div class="scroll"><div class="wrap">
+      <form class="addrow" onsubmit="return watchAdd(event)">
+        <input id="wName" placeholder="名称，如 腾讯校招" required>
+        <input id="wUrl" placeholder="https://…（JS 渲染的 SPA 也能抓，走 msedge 渲染）" required style="flex:2">
+        <button class="btn">➕ 添加监控</button>
+      </form>
+      <div id="wList"></div>
+      <div class="sechead" style="margin-top:20px"><h3>📁 巡检简报（工作区文件）</h3><span class="hint2">点文件名看全文</span></div>
+      <div id="wWs"></div>
+    </div></div>
+  </div>
+
+  <!-- ===== 界面四：台账 ===== -->
+  <div class="view" id="v-apps">
+    <div class="vhead"><h2>📋 投递台账</h2><span class="vsub">状态改动即落库 · 也可直接跟 Agent 说「记一下投了 XX」</span></div>
+    <div class="scroll"><div class="wrap">
+      <div class="statrow" id="appStats"></div>
+      <form class="addrow" onsubmit="return appAdd(event)">
+        <input id="aCo" placeholder="公司" required>
+        <input id="aPo" placeholder="岗位" required>
+        <select id="aSt"><option>投递</option><option>笔试</option><option>面试</option><option>OC</option><option>挂了</option></select>
+        <button class="btn">➕ 记一笔</button>
+      </form>
+      <div id="appTable"></div>
+    </div></div>
+  </div>
+
+  <!-- ===== 界面五：进化实验室 ===== -->
+  <div class="view" id="v-lab">
+    <div class="vhead"><h2>🧬 进化实验室</h2><span class="vsub">Curriculum → Actor → Verifier → 技能固化</span><div class="sp"></div>
+      <button class="btn sm" onclick="openRsi()">⚡ 新一轮进化</button></div>
+    <div class="scroll"><div class="wrap">
+      <div class="grid2">
+        <div>
+          <div class="sechead"><h3>⚡ 技能库</h3><span class="hint2">Verifier 通过后固化的经验，同类任务直接命中</span></div>
+          <div id="lSkl"></div>
+        </div>
+        <div>
+          <div class="sechead"><h3>💀 失败案例</h3><span class="hint2">下一轮 Curriculum 的出题素材</span></div>
+          <div id="lFail"></div>
+        </div>
+      </div>
+    </div></div>
+  </div>
+
+  <!-- ===== 界面六：多 Agent 团队 ===== -->
+  <div class="view" id="v-team">
+    <div class="vhead"><h2>🤖 多 Agent 团队</h2><span class="vsub">deepagents 式子代理：派任务只回结论，主对话保持干净</span></div>
+    <div class="scroll"><div class="wrap">
+      <div class="statrow" id="teamStats"></div>
+      <div class="sechead"><h3>派遣子代理</h3><span class="hint2">选角色 → 交代任务 → 只等结论</span></div>
+      <div class="card">
+        <div class="addrow" style="margin-bottom:10px">
+          <select id="agRole" style="flex:0 0 160px">
+            <option value="researcher">🔍 调研员 researcher</option>
+            <option value="writer">✍️ 写手 writer</option>
+            <option value="reviewer">🔬 审校 reviewer</option>
+          </select>
+          <input id="agTask" placeholder="任务，如：调研字节的 2027 届日常实习有哪些在招后端岗" style="flex:3">
+          <button class="btn" id="agGo" onclick="runAgent()">派遣 ▶</button>
+        </div>
+        <div id="agOut"></div>
+      </div>
+      <div class="sechead" style="margin-top:16px"><h3>角色名册</h3></div>
+      <div class="grid2" id="teamRoster"></div>
+    </div></div>
+  </div>
+
+  <!-- ===== 界面七：MCP 外接 ===== -->
+  <div class="view" id="v-mcp">
+    <div class="vhead"><h2>🔌 MCP 外接工具</h2><span class="vsub">Model Context Protocol · 外部 server 的工具自动桥接进 Agent</span><div class="sp"></div>
+      <button class="btn ghost sm" id="mcpRefBtn" onclick="mcpRefresh()">🔄 重连</button></div>
+    <div class="scroll"><div class="wrap">
+      <div class="card">
+        <div class="ct">📡 怎么接入微信 / 飞书 / QQ？</div>
+        <div class="cd">
+          项目根目录 <code style="font-family:var(--mono)">mcp.json</code>（从 mcp.example.json 拷一份）里填 server 配置，
+          <code style="font-family:var(--mono)">"enabled": true</code>，点「重连」——该 server 的所有工具自动以
+          <code style="font-family:var(--mono)">mcp_服务名_工具名</code> 加入 Agent 的工具集，对话里直接可用。<br>
+          社区现成实现：飞书 <b>larksuite/lark-openapi-mcp</b> · 微信 <b>wechaty 系 MCP</b> · QQ <b>NapCat/OneBot MCP</b> · 文件系统/抓取 <b>modelcontextprotocol 官方 servers</b>
+        </div>
+      </div>
+      <div class="sechead"><h3>已配置的 server</h3></div>
+      <div id="mcpList"></div>
+    </div></div>
+  </div>
+
+  <!-- ===== 界面七：知识库 ===== -->
+  <div class="view" id="v-kb">
+    <div class="vhead"><h2>📚 知识库</h2><span class="vsub">上传文档 → 自动切片 → 对话里 Agent 自动检索引用（抄 Open WebUI / Dify）</span></div>
+    <div class="scroll"><div class="wrap">
+      <form class="addrow" onsubmit="return false">
+        <input type="file" id="kbFile" accept=".txt,.md,.csv,.json,.log" style="flex:2">
+        <button class="btn" onclick="kbUpload()">📥 上传入库</button>
+      </form>
+      <div class="cd muted" style="margin-bottom:14px">支持 .txt / .md / .csv / .json / .log · 约 400 字一块切片 · 上传后直接在对话里问「根据知识库……」即可命中</div>
+      <div id="kbList"></div>
+    </div></div>
+  </div>
+
+  <!-- ===== 界面八：设置与关于 ===== -->
+  <div class="view" id="v-set">
+    <div class="vhead"><h2>⚙️ 设置与关于</h2></div>
+    <div class="scroll"><div class="wrap" style="max-width:760px">
+      <div class="card">
+        <div class="ct">Kairos · 个人全能智能体 <span class="badge2 acc">v0.4</span></div>
+        <div class="cd">不更新模型参数，让 Agent 在真实日常任务里「做错了改规则，做对了沉淀技能」，越用越强。<br>
+        定位：个人全能助理——秋招作战（盯校招/台账/复盘）+ 通用个人需求（调研/写作/自动化）。<br>
+        能力架构件：ReAct 主循环 · 多 Agent 子代理（调研/写手/审校）· MCP 外接协议桥 · SKILL.md 技能体系 · Function Calling 19+ · DeerMem 记忆门控 · 定时自动化 · HITL 人工闸门。</div>
+        <div class="cm">SQLite 8 表持久化 · SSE 流式 · 单文件零构建前端 · mcp.json 即插即用</div>
+      </div>
+      <div class="card">
+        <div class="ct">🔌 服务端点</div>
+        <div class="cd" style="font-family:var(--mono);font-size:12px;line-height:2">
+          POST /chat · POST /rsi/run · GET/POST/DELETE /watch/sources · POST /watch/run<br>
+          GET/POST/PATCH/DELETE /applications · GET /messages · GET /memory /skills /failures /confirmations<br>
+          GET /workspace · GET /workspace/content?name= · POST /confirmations/{id}/approve
+        </div>
+      </div>
+      <div class="card">
+        <div class="ct">📦 抄改来源（站在巨人肩上）</div>
+        <div class="cd">
+          · <b>lobe-chat</b>（LobeHub，MIT）——icon-rail 导航、暗色卡片语言、对话气泡与快捷指令交互<br>
+          · <b>open-webui</b>（MIT）——工作台 CRUD、SSE 事件流（/chat/stream）、**多会话管理与知识库 RAG**<br>
+          · <b>Dify</b>（MIT）——知识库切片管道（400 字块+关键词检索，向量库在路线图）<br>
+          · <b>deepagents</b>（LangChain，MIT）——write_todos 计划闭环 + SKILL.md 技能<br>
+          · <b>Manus</b> ——工具执行过程实时可视化<br>
+          · <b>OpenHands / E2B</b> ——受控代码执行（工作区沙盒 + 10s 超时的本地简化版）<br>
+          · <b>Meta Muse</b> ——Forget 记忆删除、目标制后台任务、审批闸门设计<br>
+          · 参考源码在 <code style="font-family:var(--mono)">参考项目/</code>，完整调研见 <code style="font-family:var(--mono)">../Agent全量调研与抄入清单.md</code>
+        </div>
+      </div>
+      <div class="card">
+        <div class="ct">🧭 设计取舍（诚实声明）</div>
+        <div class="cd">
+          没有整体搬 lobe-chat 的 React 工程：它自带一整套 LLM 网关/会话存储，与本项目
+          「FastAPI + SQLite + 工具白名单」的后端重复且冲突。做法是抄它的<b>交互设计与视觉语言</b>、
+          open-webui 的<b>工作台信息架构</b>，在自己后端上重实现——前端保持零构建依赖，
+          一份 index.html 可部署在任何静态服务器。
+        </div>
+      </div>
+    </div></div>
+  </div>
+</div>
+
+<!-- RSI 弹窗 -->
+<div id="mask" onclick="if(event.target===this)closeRsi()">
+  <div class="modal">
+    <h3>⚡ RSI 自进化循环</h3>
+    <div class="sub2">Curriculum 出题 → Actor 执行 → Verifier 拿 ground truth 判卷 → 通过的经验固化为技能。失败案例自动进入下轮题库。</div>
+    <div style="margin-bottom:14px"><label class="muted" style="display:block;margin-bottom:6px">任务族</label>
+      <input id="family" style="width:100%" placeholder="如：总结一个公司校招页"></div>
+    <div style="margin-bottom:14px"><label class="muted" style="display:block;margin-bottom:6px">轮数</label>
+      <div class="rsel" id="rsel">
+        <div class="ropt" data-r="1">1 轮</div>
+        <div class="ropt on" data-r="3">3 轮</div>
+        <div class="ropt" data-r="5">5 轮</div>
+      </div></div>
+    <div class="mfoot">
+      <button class="btn ghost" onclick="closeRsi()">取消</button>
+      <button class="btn" id="rsiGo" onclick="runRsi()">开始进化</button>
+    </div>
+    <div id="rsiOut" style="margin-top:14px"></div>
+  </div>
+</div>
+<div id="toasts"></div>
+
+<script>
+const $=id=>document.getElementById(id);
+
+/* ===== Kairos Icon Set（自绘"进化环"线性图标语言：24×24 / 1.8 描边 / 圆角 / currentColor） ===== */
+const ICONS={
+'💬':'<path d="M4 6.5A2.5 2.5 0 0 1 6.5 4h11A2.5 2.5 0 0 1 20 6.5v7a2.5 2.5 0 0 1-2.5 2.5H10l-4.5 4v-4A2.5 2.5 0 0 1 4 13.5z"/><circle cx="9" cy="10" r=".6" fill="currentColor"/><circle cx="12.5" cy="10" r=".6" fill="currentColor"/><circle cx="16" cy="10" r=".6" fill="currentColor"/>',
+'📊':'<rect x="4" y="4" width="7" height="7" rx="2"/><rect x="13" y="4" width="7" height="4.5" rx="2"/><rect x="4" y="13" width="7" height="7" rx="2"/><rect x="13" y="10.5" width="7" height="9.5" rx="2"/>',
+'👁':'<path d="M3 12s3.5-6 9-6 9 6 9 6-3.5 6-9 6-9-6-9-6z"/><circle cx="12" cy="12" r="2.6"/>',
+'📋':'<rect x="5" y="4" width="14" height="17" rx="2.5"/><path d="M9 4.5V3h6v1.5M9 10h6M9 14h6M9 18h3.5"/>',
+'🧬':'<path d="M7 3c0 6 10 6 10 12M17 3c0 6-10 6-10 12M7 21c0-2 10-2 10 0"/><path d="M8.5 7h7M8.5 17h7"/>',
+'🤖':'<rect x="5" y="8" width="14" height="11" rx="3"/><circle cx="9.5" cy="13" r="1" fill="currentColor"/><circle cx="14.5" cy="13" r="1" fill="currentColor"/><path d="M12 8V4.5M12 4.5h3M8 19v1.5M16 19v1.5"/>',
+'🔌':'<path d="M9 3v5M15 3v5M6.5 8h11v3.5a5.5 5.5 0 0 1-11 0z"/><path d="M12 17v4"/>',
+'📚':'<path d="M5 4.5A1.5 1.5 0 0 1 6.5 3H11v18H6.5A1.5 1.5 0 0 1 5 19.5z"/><path d="M19 4.5A1.5 1.5 0 0 0 17.5 3H13v18h4.5a1.5 1.5 0 0 0 1.5-1.5z"/>',
+'⚙️':'<circle cx="12" cy="12" r="3.2"/><path d="M12 2.8v3M12 18.2v3M2.8 12h3M18.2 12h3M5.5 5.5l2.1 2.1M16.4 16.4l2.1 2.1M18.5 5.5l-2.1 2.1M7.6 16.4l-2.1 2.1"/>',
+'🎯':'<circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="4.8"/><circle cx="12" cy="12" r="1.4" fill="currentColor"/>',
+'🧠':'<circle cx="7" cy="7" r="2.2"/><circle cx="17" cy="7" r="2.2"/><circle cx="12" cy="16.5" r="2.2"/><path d="M8.5 8.7l2.4 5.6M15.5 8.7l-2.4 5.6M9.2 7h4.6"/>',
+'⚡':'<path d="M13 2.5L5 13.5h5.5L11 21.5l8-11h-5.5z"/>',
+'🛡':'<path d="M12 3l7.5 3v5.5c0 4.6-3.2 7.8-7.5 9.5-4.3-1.7-7.5-4.9-7.5-9.5V6z"/><path d="M9 11.8l2.2 2.2 4-4.2"/>',
+'➕':'<circle cx="12" cy="12" r="8.5"/><path d="M12 8v8M8 12h8"/>',
+'📄':'<path d="M6 3.5h8L19 8.5v12H6z"/><path d="M14 3.5v5h5M9 13h6M9 16.5h4"/>',
+'📁':'<path d="M3.5 6.5A1.5 1.5 0 0 1 5 5h4.5l2 2.5H19a1.5 1.5 0 0 1 1.5 1.5v9A1.5 1.5 0 0 1 19 19.5H5A1.5 1.5 0 0 1 3.5 18z"/>',
+'🔄':'<path d="M19.5 12a7.5 7.5 0 1 1-2.2-5.3"/><path d="M19.5 3.5v3.8h-3.8"/>',
+'✅':'<circle cx="12" cy="12" r="8.5"/><path d="M8.3 12.3l2.6 2.6 4.8-5.2"/>',
+'💀':'<path d="M12 3a7.5 7.5 0 0 0-7.5 7.5c0 2.6 1.3 4.6 3 5.8V19a1.5 1.5 0 0 0 1.5 1.5h6A1.5 1.5 0 0 0 16.5 19v-2.7c1.7-1.2 3-3.2 3-5.8A7.5 7.5 0 0 0 12 3z"/><circle cx="9" cy="11" r="1.2" fill="currentColor"/><circle cx="15" cy="11" r="1.2" fill="currentColor"/><path d="M10.5 16.5h3"/>',
+'📝':'<path d="M4 20l1-4L16.5 4.5a2.1 2.1 0 0 1 3 3L8 19z"/><path d="M14.5 6.5l3 3"/>',
+'🔗':'<path d="M10 14a4 4 0 0 1 0-5.6l2.8-2.8a4 4 0 1 1 5.6 5.6l-1.4 1.4"/><path d="M14 10a4 4 0 0 1 0 5.6l-2.8 2.8a4 4 0 1 1-5.6-5.6l1.4-1.4"/>',
+'🧭':'<circle cx="12" cy="12" r="8.5"/><path d="M15.5 8.5l-2 5-5 2 2-5z"/>',
+'▼':'<path d="M7 10l5 5 5-5"/>',
+'🔁':'<path d="M12 3v3M12 18v3M4.9 7.5l2.6 1.5M16.5 15l2.6 1.5M4.9 16.5l2.6-1.5M16.5 9l2.6-1.5"/><circle cx="12" cy="12" r="4.2"/>'
+};
+function iconHTML(html){
+  for(const k in ICONS){
+    if(html.includes(k)) html=html.split(k).join(`<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONS[k]}</svg>`);
+  }
+  return html;
+}
+function reicon(root){ (root||document.body).innerHTML=iconHTML((root||document.body).innerHTML); }
+/* 用法：渲染完容器后 reicon(容器)——emoji 被替换成 SVG 后不会二次转换；注意别对含 addEventListener 元素的容器用 */
+
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const md=s=>esc(s).replace(/\*\*(.+?)\*\*/g,'<b>$1</b>')
+  .replace(/`([^`]+)`/g,'<code>$1</code>')
+  .replace(/(https?:\/\/[^\s<）)」']+)/g,'<a href="$1" target="_blank">$1</a>');
+const fmtT=t=>{if(!t)return '—';const d=new Date(t*1000);
+  return `${d.getMonth()+1}/${d.getDate()} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`};
+async function api(url,opt){const r=await fetch(url,opt);if(!r.ok)throw new Error(url+' → '+r.status);return r.json()}
+function toast(msg,err=false){const d=document.createElement('div');
+  d.className='toast'+(err?' err':'');d.textContent=msg;$('toasts').appendChild(d);
+  setTimeout(()=>{d.style.opacity=0;d.style.transition='.4s';setTimeout(()=>d.remove(),400)},3400)}
+
+/* ===== 导航 ===== */
+let view='chat';
+function go(v){view=v;
+  document.querySelectorAll('.nav').forEach(n=>n.classList.toggle('on',n.dataset.v===v));
+  document.querySelectorAll('.view').forEach(x=>x.classList.remove('on'));
+  $('v-'+v).classList.add('on');
+  if(v==='chat')scrollLog();
+  renderView(v)}
+function renderView(v){
+  if(v==='dash')renderDash();
+  else if(v==='watch')renderWatch();
+  else if(v==='apps')renderApps();
+  else if(v==='lab')renderLab();
+  else if(v==='team')renderTeam();
+  else if(v==='mcp')renderMcp();
+  else if(v==='kb')renderKb();
+  reicon($('v-'+v))}
+
+/* ===== 知识库（Open WebUI / Dify 抄改） ===== */
+let KB=[];
+async function renderKb(){
+  try{KB=await api('/kb')}catch(e){KB=[]}
+  $('kbList').innerHTML=KB.length?KB.map(d=>`<div class="card"><div class="ct">📄 ${esc(d.doc_name)}<span class="badge2 acc">${d.chunks} 块切片</span>
+    <span style="margin-left:auto"></span><button class="btn danger sm" onclick="delKb('${esc(d.doc_name).replace(/'/g,"\\'")}')">删除</button></div>
+    <div class="cm">上传于 ${fmtT(d.uploaded_at)}</div></div>`).join('')
+    :'<div class="empty"><span class="ico">📚</span>知识库还是空的<br>传个 JD 汇总、面经笔记、公司调研，Agent 答题时自动引用</div>';
+}
+async function kbUpload(){
+  const f=$('kbFile').files[0];if(!f)return toast('先选个文件',true);
+  const fd=new FormData();fd.append('file',f);
+  try{const r=await fetch('/kb/upload',{method:'POST',body:fd});
+    if(!r.ok)throw new Error('HTTP '+r.status);
+    const j=await r.json();toast(`已入库：${j.doc}（${j.chunks} 块）`);$('kbFile').value='';renderKb()}
+  catch(e){toast('上传失败：'+e.message,true)}
+}
+async function delKb(name){
+  if(!confirm(`确认删除知识库文档「${name}」？`))return;
+  try{await api(`/kb/${encodeURIComponent(name)}`,{method:'DELETE'});toast('已删除');renderKb()}
+  catch(e){toast('失败：'+e.message,true)}}
+
+/* ===== 全局数据 ===== */
+const D={mem:[],skl:[],conf:[],watch:[],app:[],ws:[],fail:[],todo:[],goals:[]};
+async function loadAll(notify){
+  const one=async(k,url,norm)=>{try{const r=await api(url);D[k]=norm?norm(r):r}catch(e){}};
+  await Promise.all([
+    one('mem','/memory'),one('skl','/skills'),one('conf','/confirmations'),
+    one('watch','/watch/sources'),one('app','/applications'),
+    one('fail','/failures'),one('todo','/todos'),one('goals','/goals'),
+    one('ws','/workspace',r=>Array.isArray(r)?r:(typeof r==='string'?(r.trim().startsWith('[')?JSON.parse(r):[]):r))
+  ]);
+  // 角标 + 控制台数字
+  const p=D.conf.filter(c=>c.status==='pending').length;
+  const old=$('rail').querySelector('.nav[data-v="dash"] .ndot');
+  if(p>0){if(!old){const b=document.createElement('div');b.className='ndot';b.textContent=p;
+    document.querySelector('.nav[data-v="dash"]').appendChild(b)}else old.textContent=p}
+  else if(old)old.remove();
+  $('dApp')&&($('dApp').textContent=D.app.length);
+  $('dSrc')&&($('dSrc').textContent=D.watch.length);
+  $('dMem')&&($('dMem').textContent=D.mem.length);
+  $('dSkl')&&($('dSkl').textContent=D.skl.length);
+  renderView(view);renderCtx();
+  if(notify)toast('已刷新');
+}
+function memCard(m){return `<div class="card"><div class="ct"><span class="badge2 acc">${esc(m.kind||'fact')}</span><button class="btn danger sm" style="margin-left:auto" onclick="forgetMem(${m.id})" title="Forget（Muse 同款）">忘掉</button></div><div class="cd">${esc(m.content)}</div><div class="cm">更新 ${fmtT(m.updated_at)}</div></div>`}
+async function forgetMem(id){
+  if(!confirm('确认删掉这条记忆？（Muse 的 Forget 能力）'))return;
+  try{await api(`/memory/${id}`,{method:'DELETE'});toast('已忘掉');loadAll()}
+  catch(e){toast('失败：'+e.message,true)}}
+function sklCard(s,expand){return `<div class="card"><div class="ct">⚡ ${esc(s.name)}<span class="badge2 ok">×${s.uses??0}</span></div>
+  <div class="cd">${esc(s.description||(s.content||'').slice(0,90))}</div>
+  ${expand&&s.content?`<details style="margin-top:8px"><summary class="muted" style="cursor:pointer">展开技能正文</summary><pre class="fileview" style="margin-top:8px">${esc(s.content)}</pre></details>`:''}</div>`}
+
+/* ===== 对话 ===== */
+let busy=false,ctxTab='mem',CUR_SESSION=null,SESSIONS=[];
+async function send(){
+  if(busy)return;
+  const inp=$('inp');const t=inp.value.trim();if(!t)return;
+  busy=true;$('sendBtn').innerHTML='<span class="spin"></span>';
+  inp.value='';inp.style.height='auto';
+  const hero=$('logInner').querySelector('.hero');if(hero)hero.remove();
+  addMsg('user',t);
+  const tp=addTyping();
+  // 在打字气泡里挂一个实时轨迹行（抄 Manus 的过程流）
+  const bub=tp.querySelector('.bubble');
+  const live=document.createElement('div');live.className='trace';bub.appendChild(live);
+  const addChip=(txt,doneOk=null)=>{
+    const c=document.createElement('span');c.className='tchip';
+    c.innerHTML=(doneOk===false?'⚠ ':'')+esc(txt);
+    if(doneOk===false)c.style.color='var(--err)';
+    live.appendChild(c);scrollLog();return c};
+  try{
+    const resp=await fetch('/chat/stream',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({text:t,session_id:CUR_SESSION,model:localStorage.getItem('evoModel')||null})});
+    if(!resp.ok||!resp.body)throw new Error('stream '+resp.status);
+    const reader=resp.body.getReader();const dec=new TextDecoder();
+    let buf='',final=null;
+    while(true){
+      const {done,value}=await reader.read();if(done)break;
+      buf+=dec.decode(value,{stream:true});
+      const parts=buf.split('\n\n');buf=parts.pop();
+      for(const p of parts){
+        const line=p.trim();if(!line.startsWith('data:'))continue;
+        const payload=line.slice(5).trim();
+        if(payload==='[DONE]')continue;
+        try{
+          const d=JSON.parse(payload);
+          if(d.type==='tool_start'){const c=addChip('⚙ '+d.tool+' …');c.dataset.tool=d.tool}
+          else if(d.type==='tool_done'){
+            const c=[...live.children].find(x=>x.dataset.tool===d.tool&&!x.dataset.done);
+            if(c){c.dataset.done=1;c.textContent=(d.ok?'':'⚠ ')+d.tool+' ✓'}
+            else addChip(d.tool,d.ok)}
+          else if(d.type==='answer'){final=d}
+        }catch(e){}
+      }
+    }
+    if(final===null)final={answer:'(流中断)'};
+    if(final.session_id){CUR_SESSION=final.session_id;loadSessions()}
+    const tr=[...live.children].map(x=>({tool:x.dataset.tool||x.textContent}));
+    tp.remove();
+    addMsg('bot',final.answer||'(空响应)',tr.length?tr:undefined);
+  }catch(e){
+    // 流式失败 → 回退阻塞接口
+    try{
+      const r=await api('/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text:t,session_id:CUR_SESSION,model:localStorage.getItem('evoModel')||null})});
+      if(r.session_id){CUR_SESSION=r.session_id;loadSessions()}
+      tp.remove();addMsg('bot',r.answer||'(空响应)',r.trace);
+    }catch(e2){tp.remove();addMsg('bot','⚠ 请求失败：'+e2.message)}
+  }
+  busy=false;$('sendBtn').textContent='发送';
+  loadAll();
+}
+function addMsg(role,text,trace){
+  const d=document.createElement('div');d.className='msg '+role;
+  d.innerHTML=`<div class="avatar">${role==='user'?'我':'E'}</div><div class="bubble">${md(text)}</div>`;
+  if(trace&&trace.length){
+    const tr=document.createElement('div');tr.className='trace';
+    tr.innerHTML='<span class="tchip">🛠 工具轨迹</span>'+trace.map(x=>`<span class="tarr">→</span><span class="tchip">${esc(x.tool)}</span>`).join('');
+    d.querySelector('.bubble').appendChild(tr);
+  }
+  $('logInner').appendChild(d);reicon(d);scrollLog();
+}
+function addTyping(){const d=document.createElement('div');d.className='msg bot';
+  d.innerHTML='<div class="avatar">E</div><div class="bubble typing"><i></i><i></i><i></i></div>';
+  $('logInner').appendChild(d);scrollLog();return d}
+function scrollLog(){const l=$('log');l.scrollTop=l.scrollHeight}
+async function loadHistory(){
+  try{
+    const ms=await api('/messages?limit=60'+(CUR_SESSION?`&session_id=${CUR_SESSION}`:''));
+    $('logInner').innerHTML='';
+    if(!ms.length){showHero();return}
+    ms.forEach(m=>addMsg(m.role==='user'?'user':'bot',m.content));
+  }catch(e){}
+}
+/* 会话管理（Open WebUI / LobeChat 抄改） */
+async function loadSessions(){
+  try{
+    SESSIONS=await api('/sessions');
+    if(!SESSIONS.length)return;
+    if(!CUR_SESSION)CUR_SESSION=SESSIONS[0].id;
+    $('sessSel').innerHTML=SESSIONS.map(s=>
+      `<option value="${s.id}" ${s.id===CUR_SESSION?'selected':''}>${esc(s.title)}（${s.msg_count}）</option>`).join('');
+  }catch(e){}
+}
+async function switchSession(v){CUR_SESSION=+v;await loadHistory()}
+async function newSession(){
+  try{const r=await api('/sessions',{method:'POST'});CUR_SESSION=r.id;loadSessions();
+    $('logInner').innerHTML='';showHero();toast('新对话已创建')}
+  catch(e){toast('失败：'+e.message,true)}}
+async function delSession(){
+  if(!CUR_SESSION)return;
+  if(!confirm('删除当前会话及其全部消息？'))return;
+  try{await api(`/sessions/${CUR_SESSION}`,{method:'DELETE'});CUR_SESSION=null;
+    $('logInner').innerHTML='';await loadSessions();await loadHistory();toast('已删除')}
+  catch(e){toast('失败：'+e.message,true)}}
+function showHero(){$('logInner').innerHTML=`<div class="hero">
+  <div class="hlogo">E</div>
+  <h2>你好，我是 <span>Kairos</span></h2>
+  <p>你的个人全能助理：秋招作战（盯校招·台账·复盘沉淀）+ 日常一切琐事（查资料·写东西·自动化）。<br>
+     多 Agent 协作 · MCP 外接微信/飞书/QQ · 知识库问答 · 记忆越用越准，技能越用越多。</p>
+  <div class="quick">
+    <div class="qk" onclick="quick('记一下：我投了腾讯 AI 应用开发岗')">📝 记一笔投递</div>
+    <div class="qk" onclick="quick('查一下我的投递台账统计')">📊 投递统计</div>
+    <div class="qk" onclick="quick('帮我盯一下腾讯校招页 https://join.qq.com')">👁 盯个校招页</div>
+    <div class="qk" onclick="quick('根据知识库里的内容，帮我总结要点')">📚 问知识库</div>
+    <div class="qk" onclick="quick('用 Python 算一下 2026 年秋招还剩多少天')">🧮 跑段代码</div>
+  </div></div>`;
+  reicon($('logInner'));}
+function ctab(t){ctxTab=t;
+  document.querySelectorAll('.ptab').forEach(x=>x.classList.toggle('on',x.dataset.t===t));
+  renderCtx()}
+function renderCtx(){
+  const b=$('cpbody');if(!b)return;
+  if(ctxTab==='mem')b.innerHTML=(D.mem.length?D.mem.map(memCard).join(''):'<div class="empty"><span class="ico">🧠</span>还没有记忆<br>对话里说说你的偏好，我会记下来</div>');
+  else if(ctxTab==='skl')b.innerHTML=(D.skl.length?D.skl.map(s=>sklCard(s,false)).join(''):'<div class="empty"><span class="ico">⚡</span>技能库为空<br>跑一次 RSI，通过的经验会固化到这里</div>');
+  else{const p=D.conf.filter(c=>c.status==='pending');
+    b.innerHTML=(D.conf.length?D.conf.map(c=>`<div class="card"><div class="ct"><span class="badge2 ${c.status==='pending'?'warn':c.status==='approved'?'ok':'err'}">${c.status==='pending'?'待确认':c.status==='approved'?'已批准':'已拒绝'}</span><span style="font-size:12px;color:var(--tx3)">${esc(c.action)}</span></div><div class="cd">${esc(c.payload.slice(0,160))}</div><div class="cm">#${c.id} · ${fmtT(c.created_at)} ${c.status==='pending'?`<button class="btn sm" onclick="approveScope(${c.id},'once')">批准</button> <button class="btn ghost sm" onclick="approveScope(${c.id},'forever')">永久授权</button>`:''}</div></div>`).join(''):'<div class="empty"><span class="ico">🛡</span>队列为空<br>高危动作会先落在这里等你批准</div>')}
+  reicon(b);
+}
+
+/* ===== 控制台 ===== */
+function renderDash(){
+  const p=D.conf.filter(c=>c.status==='pending');
+  $('dConf').innerHTML=p.length?p.map(c=>`<div class="card"><div class="ct"><span class="badge2 warn">待确认</span>${esc(c.action)}</div><div class="cd">${esc(c.payload.slice(0,140))}</div><div class="cm">#${c.id} · ${fmtT(c.created_at)}<button class="btn sm" style="margin-left:auto" onclick="approveScope(${c.id},'once')">批准</button> <button class="btn ghost sm" onclick="approveScope(${c.id},'forever')">永久授权</button></div></div>`).join('')
+    :'<div class="empty" style="padding:22px"><span class="ico">🛡</span>没有待办，Agent 很安分</div>';
+  const ws=[...D.ws].reverse().slice(0,6);
+  $('dWs').innerHTML=ws.length?ws.map(f=>`<div class="card" style="cursor:pointer" onclick="viewFile('${esc(f).replace(/'/g,"\\'")}')"><div class="ct">📄 <span style="font-family:var(--mono);font-size:12px">${esc(f)}</span></div></div>`).join('')
+    :'<div class="empty" style="padding:22px"><span class="ico">📁</span>还没有简报<br>巡检抓到变化会自动写</div>';
+  const todos=D.todo.slice(0,8);
+  $('dTodo').innerHTML=todos.length?todos.map(t=>`<div class="card" style="padding:10px 14px;display:flex;align-items:center;gap:10px">
+      <span style="cursor:pointer;font-size:15px" onclick="todoToggle(${t.id},'${t.status==='done'?'open':'done'}')" title="点击切换状态">${t.status==='done'?'✅':'⬜'}</span>
+      <span style="flex:1;font-size:13px;${t.status==='done'?'color:var(--tx3);text-decoration:line-through':''}">${esc(t.title)}</span>
+      <span class="muted">${fmtT(t.created_at)}</span>
+      <button class="btn danger sm" onclick="todoDel(${t.id})">删</button></div>`).join('')
+    :'<div class="empty" style="padding:18px"><span class="ico">🎯</span>还没有计划<br>给 Agent 一个多步任务，它会自己拆解列计划</div>';
+  const goals=D.goals.filter(g=>g.status==='active');
+  $('dGoals').innerHTML=goals.length?goals.map(g=>`<div class="card">
+    <div class="ct">🎯 ${esc(g.title)}
+      <span style="margin-left:auto"></span>
+      <button class="btn ghost sm" onclick="goalPatch(${g.id},'done')">完成</button>
+      <button class="btn danger sm" onclick="goalDel(${g.id})">删</button></div>
+    ${g.plan?`<div class="cd">📌 计划：${esc(g.plan)}</div>`:''}
+    ${g.progress?`<details style="margin-top:6px"><summary class="muted" style="cursor:pointer">进展记录</summary><div class="cd" style="white-space:pre-wrap;font-family:var(--mono);font-size:11.5px">${esc(g.progress)}</div></details>`:'<div class="muted" style="margin-top:5px">下一轮调度开始推进（每 6 小时一步）</div>'}
+    </div>`).join('')
+    :'<div class="empty" style="padding:16px"><span class="ico">🎯</span>还没有长期目标<br>对话里说「盯着 XX 直到 YY」或上面直接登记，后台每 6 小时自动推进一步</div>';
+}
+async function goalAdd(ev){ev.preventDefault();
+  try{const r=await api('/goals',{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({title:$('gTitle').value.trim(),plan:$('gPlan').value.trim()})});
+    toast(r.msg||'目标已登记');$('gTitle').value='';$('gPlan').value='';loadAll()}
+  catch(e){toast('失败：'+e.message,true)}return false}
+async function goalPatch(id,status){
+  try{await api(`/goals/${id}`,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({status})});loadAll()}
+  catch(e){toast('失败：'+e.message,true)}}
+async function goalDel(id){
+  try{await api(`/goals/${id}`,{method:'DELETE'});loadAll()}
+  catch(e){toast('失败：'+e.message,true)}}
+
+/* ===== 巡检 ===== */
+function renderWatch(){
+  $('wList').innerHTML=D.watch.length?D.watch.map(s=>`<div class="card"><div class="ct">👁 ${esc(s.name)}
+    <span class="badge2 ${s.status==='active'?'ok':'err'}">${esc(s.status)}</span>
+    <span style="margin-left:auto"></span><button class="btn danger sm" onclick="watchDel(${s.id},'${esc(s.name).replace(/'/g,"\\'")}')">删除</button></div>
+    <div class="cd" style="font-family:var(--mono);font-size:11.5px;color:var(--tx3)">${esc(s.url)}</div>
+    <div class="cm">上次巡检 ${fmtT(s.last_check_at)}</div></div>`).join('')
+    :'<div class="empty"><span class="ico">👁</span>还没有监控源<br>添加校招页 URL，sha256 内容 diff 盯变化</div>';
+  const ws=[...D.ws].reverse();
+  $('wWs').innerHTML=ws.length?ws.map(f=>`<div class="card" style="cursor:pointer" onclick="viewFile('${esc(f).replace(/'/g,"\\'")}')"><div class="ct">📄 <span style="font-family:var(--mono);font-size:12px">${esc(f)}</span></div></div>`).join('')
+    :'<div class="empty" style="padding:22px"><span class="ico">📁</span>还没有简报产出</div>';
+}
+async function watchAdd(ev){ev.preventDefault();
+  try{const r=await api('/watch/sources',{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({name:$('wName').value.trim(),url:$('wUrl').value.trim()})});
+    toast(r.msg||('ok:'+r.ok));$('wName').value='';$('wUrl').value='';loadAll()}
+  catch(e){toast('失败：'+e.message,true)}return false}
+async function watchDel(id,name){
+  if(!confirm(`确认停止监控「${name}」？`))return;
+  try{await api(`/watch/sources/${id}`,{method:'DELETE'});toast('已删除');loadAll()}
+  catch(e){toast('失败：'+e.message,true)}}
+async function watchRun(){
+  const btn=$('wrBtn');if(btn){btn.disabled=true;btn.innerHTML='<span class="spin"></span> 巡检中'}
+  try{const r=await api('/watch/run',{method:'POST'});
+    toast(`巡检完成：${r.changed??0} 个源有变化`);loadAll()}
+  catch(e){toast('巡检失败：'+e.message,true)}
+  if(btn){btn.disabled=false;btn.textContent='▶ 立即巡检'}}
+async function viewFile(name){
+  try{const r=await api('/workspace/content?name='+encodeURIComponent(name));
+    showFile(name,(r&&r.content)||String(r))}
+  catch(e){toast('读取失败：'+e.message,true)}}
+function showFile(title,content){
+  $('mask').classList.add('show');
+  $('mask').querySelector('.modal').innerHTML=`<h3>📄 ${esc(title)}</h3><pre class="fileview">${esc(content)}</pre>
+    <div class="mfoot"><button class="btn ghost" onclick="closeAny()">关闭</button></div>`}
+function closeAny(){$('mask').classList.remove('show');resetRsiModal()}
+
+/* ===== 台账 ===== */
+const ST_COLORS={'投递':'acc','笔试':'warn','面试':'warn','OC':'ok','挂了':'err'};
+function renderApps(){
+  const st={};D.app.forEach(a=>st[a.status]=(st[a.status]||0)+1);
+  $('appStats').innerHTML=`
+    <div class="stat"><span>总数</span><b>${D.app.length}</b></div>
+    <div class="stat"><span>进行中（笔试/面试）</span><b>${(st['笔试']||0)+(st['面试']||0)}</b></div>
+    <div class="stat"><span>已 OC</span><b>${st['OC']||0}</b></div>
+    <div class="stat"><span>挂了</span><b>${st['挂了']||0}</b></div>`;
+  $('appTable').innerHTML=D.app.length?`<div class="card" style="padding:4px 10px"><table>
+    <thead><tr><th>公司</th><th>岗位</th><th>状态</th><th>备注</th><th>更新</th><th></th></tr></thead><tbody>`+
+    D.app.map(a=>`<tr><td><b>${esc(a.company)}</b></td><td>${esc(a.position)}</td>
+      <td><select onchange="appStatus(${a.id},this.value)" style="padding:4px 8px;font-size:12px">
+        ${['投递','笔试','面试','OC','挂了'].map(s=>`<option ${s===a.status?'selected':''}>${s}</option>`).join('')}</select></td>
+      <td class="muted">${esc(a.notes||'')}</td><td class="muted">${fmtT(a.updated_at)}</td>
+      <td><button class="btn danger sm" onclick="appDel(${a.id},'${esc(a.company).replace(/'/g,"\\'")}')">删</button></td></tr>`).join('')+
+    '</tbody></table></div>'
+    :'<div class="empty"><span class="ico">📋</span>台账为空<br>记一笔，或直接跟 Agent 说「记一下投了 XX 岗」</div>'}
+async function appAdd(ev){ev.preventDefault();
+  try{await api('/applications',{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({company:$('aCo').value.trim(),position:$('aPo').value.trim(),status:$('aSt').value})});
+    toast('已记入台账');$('aCo').value='';$('aPo').value='';loadAll()}
+  catch(e){toast('失败：'+e.message,true)}return false}
+async function appStatus(id,status){
+  try{await api(`/applications/${id}`,{method:'PATCH',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({status})});toast('状态已更新 → '+status);loadAll()}
+  catch(e){toast('失败：'+e.message,true)}}
+async function appDel(id,co){
+  if(!confirm(`确认删除「${co}」的投递记录？`))return;
+  try{await api(`/applications/${id}`,{method:'DELETE'});toast('已删除');loadAll()}
+  catch(e){toast('失败：'+e.message,true)}}
+
+/* ===== 实验室 ===== */
+function renderLab(){
+  $('lSkl').innerHTML=D.skl.length?D.skl.map(s=>sklCard(s,true)).join('')
+    :'<div class="empty"><span class="ico">⚡</span>技能库为空<br>跑一次 RSI 循环试试</div>';
+  $('lFail').innerHTML=D.fail.length?D.fail.map(f=>`<div class="card"><div class="ct"><span class="badge2 err">失败</span></div><div class="cd">${esc(f.task_desc)}</div><div class="cd" style="color:var(--tx3)">${esc(f.reason).slice(0,120)}</div><div class="cm">${fmtT(f.created_at)}</div></div>`).join('')
+    :'<div class="empty" style="padding:22px"><span class="ico">💀</span>还没有失败案例<br>（这是好事？不一定，RSI 靠它出难题）</div>'}
+
+/* ===== RSI ===== */
+let rounds=3;
+function resetRsiModal(){
+  const m=$('mask').querySelector('.modal');
+  if(!$('rsiGo')){m.innerHTML=`<h3>⚡ RSI 自进化循环</h3>
+    <div class="sub2">Curriculum 出题 → Actor 执行 → Verifier 拿 ground truth 判卷 → 通过的经验固化为技能。失败案例自动进入下轮题库。</div>
+    <div style="margin-bottom:14px"><label class="muted" style="display:block;margin-bottom:6px">任务族</label>
+      <input id="family" style="width:100%" placeholder="如：总结一个公司校招页"></div>
+    <div style="margin-bottom:14px"><label class="muted" style="display:block;margin-bottom:6px">轮数</label>
+      <div class="rsel" id="rsel"><div class="ropt" data-r="1">1 轮</div><div class="ropt on" data-r="3">3 轮</div><div class="ropt" data-r="5">5 轮</div></div></div>
+    <div class="mfoot"><button class="btn ghost" onclick="closeAny()">取消</button>
+      <button class="btn" id="rsiGo" onclick="runRsi()">开始进化</button></div><div id="rsiOut" style="margin-top:14px"></div>`;
+    $('rsel').addEventListener('click',rselPick)}
+}
+function rselPick(e){const o=e.target.closest('.ropt');if(!o)return;
+  document.querySelectorAll('.ropt').forEach(x=>x.classList.remove('on'));o.classList.add('on');rounds=+o.dataset.r}
+$('rsel').addEventListener('click',rselPick);
+function openRsi(){resetRsiModal();$('rsiOut').innerHTML='';$('mask').classList.add('show')}
+async function runRsi(){
+  const family=$('family').value.trim()||'总结一个公司校招页';
+  const btn=$('rsiGo');btn.disabled=true;btn.innerHTML='<span class="spin"></span> 进化中（1-3 分钟）';
+  $('rsiOut').innerHTML='<div class="empty"><span class="ico">🧬</span>Curriculum → Actor → Verifier 循环运行中…</div>';
+  try{
+    const r=await api('/rsi/run',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({task_family:family,rounds})});
+    $('rsiOut').innerHTML=(r.rounds||[]).map(x=>`
+      <div class="roundcard"><div class="rh">第 ${x.round} 轮
+        <span class="badge2 ${x.passed?'ok':'err'}">${x.passed?'✓ 通过':'✗ 未过'}</span>
+        ${x.skill_saved?'<span class="badge2 acc">技能已固化</span>':''}</div>
+      <div class="rt">${esc((x.task||'').slice(0,120))}</div></div>`).join('')||'<div class="empty">无返回轮次</div>';
+    toast('RSI 循环结束');loadAll();
+  }catch(e){$('rsiOut').innerHTML='<div class="empty">⚠ '+esc(e.message)+'</div>'}
+  btn.disabled=false;btn.textContent='开始进化';
+}
+
+/* ===== 确认/批准 ===== */
+async function approveScope(id,scope){
+  try{const r=await api(`/confirmations/${id}/approve?scope=${scope}`,{method:'POST'});
+    toast(r.msg||'已批准');loadAll()}
+  catch(e){toast('失败：'+e.message,true)}}
+async function loadModels(){
+  try{const ms=await api('/models');const cur=localStorage.getItem('evoModel');
+    $('modelSel').innerHTML=ms.map(m=>`<option value="${esc(m.model)}" ${m.model===cur?'selected':''}>${esc(m.name)}</option>`).join('');
+    if(!cur)localStorage.setItem('evoModel',ms[0].model);
+  }catch(e){}}
+
+/* ===== 计划 todos ===== */
+async function todoToggle(id,status){
+  try{await api(`/todos/${id}`,{method:'PATCH',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({status})});loadAll()}
+  catch(e){toast('失败：'+e.message,true)}}
+async function todoDel(id){
+  try{await api(`/todos/${id}`,{method:'DELETE'});loadAll()}
+  catch(e){toast('失败：'+e.message,true)}}
+
+/* ===== 多 Agent 团队 ===== */
+let ROSTER=null;
+async function renderTeam(){
+  if(!ROSTER){try{ROSTER=await api('/agents')}catch(e){ROSTER={roles:[],builtin_tools:0,mcp_tools:[]}}}
+  $('teamStats').innerHTML=`
+    <div class="stat"><span>内置角色</span><b>${(ROSTER.roles||[]).length}</b></div>
+    <div class="stat"><span>内置工具</span><b>${ROSTER.builtin_tools||0}</b></div>
+    <div class="stat" onclick="go('mcp')" style="cursor:pointer"><span>MCP 桥接工具</span><b>${(ROSTER.mcp_tools||[]).length}</b></div>
+    <div class="stat" onclick="go('lab')" style="cursor:pointer"><span>已固化技能</span><b>${D.skl.length}</b></div>`;
+  $('teamRoster').innerHTML=(ROSTER.roles||[]).map(r=>`<div class="card"><div class="ct">🤖 ${esc(r.label)} <span class="badge2 acc">${esc(r.role)}</span></div><div class="cd">${esc(r.desc)}</div></div>`).join('');
+}
+async function runAgent(){
+  const role=$('agRole').value,task=$('agTask').value.trim();
+  if(!task)return;
+  const btn=$('agGo');btn.disabled=true;btn.innerHTML='<span class="spin"></span> 执行中';
+  $('agOut').innerHTML='<div class="empty" style="padding:16px"><span class="ico">🤖</span>子代理工作中…</div>';
+  try{
+    const r=await api('/agents/run',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({role,task})});
+    $('agOut').innerHTML=`<div class="card" style="background:var(--bg1)"><div class="ct"><span class="badge2 ok">${r.role} · ${r.steps} 步</span>任务完成</div>
+      <div class="cd" style="white-space:pre-wrap;max-height:320px;overflow-y:auto">${esc(r.answer)}</div></div>`;
+    toast(role+' 已交卷');
+  }catch(e){$('agOut').innerHTML='<div class="empty">⚠ '+esc(e.message)+'</div>'}
+  btn.disabled=false;btn.textContent='派遣 ▶';
+}
+
+/* ===== MCP ===== */
+async function renderMcp(){
+  try{var st=await api('/mcp/status')}catch(e){st={}}
+  const names=Object.keys(st);
+  $('mcpList').innerHTML=names.length?names.map(n=>{
+    const s=st[n];
+    const tools=(s.tools||[]).map(t=>`<span class="tchip">mcp_${esc(n)}_${esc(t.name)}</span>`).join(' ');
+    return `<div class="card"><div class="ct">🔌 ${esc(n)}
+      <span class="badge2 ${s.connected?'ok':s.disabled?'warn':'err'}">${s.connected?'已连接':s.disabled?'未启用':'连接失败'}</span></div>
+      ${s.error?`<div class="cd" style="color:var(--err)">⚠ ${esc(s.error)}</div>`:''}
+      ${s.connected&&s.server_info?`<div class="cm">${esc(s.server_info.name||'')} v${esc(s.server_info.version||'?')}</div>`:''}
+      ${tools?`<div class="cd" style="margin-top:8px">${tools}</div>`:''}</div>`}).join('')
+    :'<div class="empty"><span class="ico">🔌</span>还没配置任何 MCP server<br>拷 mcp.example.json → mcp.json，填微信/飞书/QQ 的 server 即可</div>';
+}
+async function mcpRefresh(){
+  const btn=$('mcpRefBtn');btn.disabled=true;btn.innerHTML='<span class="spin"></span> 重连中';
+  try{await api('/mcp/refresh',{method:'POST'});toast('MCP 已重连');renderMcp();ROSTER=null}
+  catch(e){toast('失败：'+e.message,true)}
+  btn.disabled=false;btn.textContent='🔄 重连';
+}
+
+/* ===== 快捷指令 + 启动 ===== */
+function quick(t){go('chat');$('inp').value=t;send()}
+reicon($('rail'));
+loadModels();
+loadSessions();
+loadHistory();
+loadAll();
+go('chat');
+setInterval(()=>{fetch('/confirmations').then(r=>r.json()).then(cs=>{
+  D.conf=cs;const p=cs.filter(c=>c.status==='pending').length;
+  const old=$('rail').querySelector('.nav[data-v="dash"] .ndot');
+  if(p>0){if(!old){const b=document.createElement('div');b.className='ndot';b.textContent=p;
+    document.querySelector('.nav[data-v="dash"]').appendChild(b)}else old.textContent=p}
+  else if(old)old.remove();
+  if(view==='dash'){renderDash();reicon($('v-dash'))}
+  if(view==='chat'){renderCtx();reicon($('cpbody'))}
+}).catch(()=>{})},30000);
+</script>
+</body>
+</html>

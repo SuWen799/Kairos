@@ -1,0 +1,25 @@
+name = "kairos-agent"
+main = "src/index.ts"
+compatibility_date = "2026-10-01"
+compatibility_flags = ["nodejs_compat"]
+
+# 每用户一个 Agent DO（领域模型唯一写者：Triggers/Tickets/Mandates）
+[[durable_objects.bindings]]
+name = "AGENT"
+class_name = "AgentDO"
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["AgentDO"]
+
+# 事件源：定时巡检（示例：每 30 分钟；Source 抽象的第一种 kind）
+[triggers]
+crons = ["*/30 * * * *"]
+
+[observability]
+enabled = true
+
+[vars]
+# 评估用模型（DeepSeek OpenAI 兼容；key 放 Secrets：npx wrangler secret put DEEPSEEK_API_KEY）
+EVAL_BASE_URL = "https://api.deepseek.com/v1"
+EVAL_MODEL = "deepseek-chat"

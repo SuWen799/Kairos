@@ -1,0 +1,9 @@
+fastapi>=0.110
+uvicorn>=0.29
+requests>=2.31
+openai>=1.30
+sqlalchemy>=2.0
+alembic>=1.13
+keyring>=25.0
+lark-oapi>=1.7.0
+pyinstaller>=6.0

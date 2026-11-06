@@ -1,0 +1,39 @@
+# Kairos 桌面端打包配置（M5）
+appId: com.kairos.desktop
+productName: Kairos
+directories:
+  output: release
+  buildResources: build
+files:
+  - out/**
+extraResources:
+  # PyInstaller sidecar 产物（M5：backend.exe onedir）
+  - from: ../kairos/dist/backend
+    to: backend
+  # 图标资源（icon.ico/tray.png，v3 星芒）
+  - from: resources
+    to: resources
+  # 手机端 SPA 静态目录（server.py 经 KAIROS_WEB_DIST 读取，main.ts 打包态注入）
+  - from: out/renderer
+    to: web-dist
+publish:
+  # electron-updater 更新源（GitHub Releases；推 tag 即发布，CI 见 .github/workflows/release.yml）
+  provider: github
+  owner: SuWen799
+  repo: Kairos
+win:
+  target:
+    - target: nsis
+      arch: [x64]
+    - target: portable
+      arch: [x64]
+  icon: resources/icon.ico
+  # M5：签名（需求 14.5 公开发布合规；需证书，本地无证时产物未签名——诚实声明）
+mac:
+  target: dmg
+  category: public.app-category.productivity
+  icon: resources/icon.png
+  # M5：公证（需 Apple Developer 证书）
+linux:
+  target: AppImage
+  icon: resources/icon.png

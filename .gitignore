@@ -1,0 +1,31 @@
+# Python
+__pycache__/
+*.pyc
+.kairos-venv/
+
+# PyInstaller
+kairos/build/
+kairos/dist/
+
+# Node
+node_modules/
+
+# Electron 构建产物
+desktop/out/
+desktop/release/
+
+# Kairos 运行数据（不入 git）
+kairos/data/
+*.db
+*.db-shm
+*.db-wal
+
+# 本地密钥/配置
+config.local.json
+*.log
+
+# Vite 构建缓存
+.vite/
+
+# Vite 构建缓存
+.vite/

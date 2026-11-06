@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128">
+  <!-- Kairos v3 星芒图形标（矢量重绘自 Logo系列/星芒图形标） -->
+  <defs>
+    <linearGradient id="ray" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#F5B74A"/>
+      <stop offset="1" stop-color="#E87762"/>
+    </linearGradient>
+    <linearGradient id="ray2" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#E87762"/>
+      <stop offset="1" stop-color="#B85C3A"/>
+    </linearGradient>
+  </defs>
+  <rect width="128" height="128" rx="28" fill="#171110"/>
+  <g transform="translate(64 64)">
+    <!-- 12 射线：4 长 8 短交替，暖橙→琥珀渐变 -->
+    <g fill="url(#ray)">
+      <path d="M0 -58 L4.5 -26 L-4.5 -26 Z"/>
+      <path d="M0 58 L4.5 26 L-4.5 26 Z"/>
+      <path d="M-58 0 L-26 4.5 L-26 -4.5 Z"/>
+      <path d="M58 0 L26 4.5 L26 -4.5 Z"/>
+    </g>
+    <g fill="url(#ray2)">
+      <path d="M0 -44 L3.5 -26 L-3.5 -26 Z" transform="rotate(30)"/>
+      <path d="M0 -44 L3.5 -26 L-3.5 -26 Z" transform="rotate(60)"/>
+      <path d="M0 -44 L3.5 -26 L-3.5 -26 Z" transform="rotate(120)"/>
+      <path d="M0 -44 L3.5 -26 L-3.5 -26 Z" transform="rotate(150)"/>
+      <path d="M0 -44 L3.5 -26 L-3.5 -26 Z" transform="rotate(210)"/>
+      <path d="M0 -44 L3.5 -26 L-3.5 -26 Z" transform="rotate(240)"/>
+      <path d="M0 -44 L3.5 -26 L-3.5 -26 Z" transform="rotate(300)"/>
+      <path d="M0 -44 L3.5 -26 L-3.5 -26 Z" transform="rotate(330)"/>
+    </g>
+    <!-- 中心圆环：时刻裂隙（右上缺口）+ 相位点小珠 -->
+    <circle cx="0" cy="0" r="15.5" fill="none" stroke="#F0C878" stroke-width="4.5"
+            stroke-dasharray="88 10" stroke-dashoffset="-6" stroke-linecap="round"
+            transform="rotate(-55)"/>
+    <circle cx="13.5" cy="-9.5" r="3.6" fill="#F5B74A"/>
+  </g>
+</svg>

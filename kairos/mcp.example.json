@@ -1,0 +1,23 @@
+﻿{
+  "_说明": "MCP server 配置。enabled=true 的 server 启动时自动连接，其工具以 mcp_<server>_<tool> 桥接进 Agent。微信/QQ/飞书等开源 MCP server 填进来即可。",
+  "_示例": [
+    "npx -y @modelcontextprotocol/server-filesystem  (本地文件)",
+    "npx -y @modelcontextprotocol/server-fetch       (网页抓取)",
+    "uvx mcp-server-fetch",
+    "微信: github.com/wechaty/mcp 之类社区实现；飞书: larksuite/lark-openapi-mcp；QQ: 社区 NapCat/OneBot MCP"
+  ],
+  "servers": [
+    {
+      "name": "filesystem",
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-filesystem", "C:/Users/<user>/Desktop"],
+      "enabled": false
+    },
+    {
+      "name": "feishu",
+      "command": "npx",
+      "args": ["-y", "@larksuiteoapi/lark-mcp", "mcp", "-a", "<app_id>", "-s", "<app_secret>"],
+      "enabled": false
+    }
+  ]
+}
